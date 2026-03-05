@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>📸 Camera to Telegram · Advanced</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #0b1120;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 16px;
+        }
+        .card {
+            background: #1e293b;
+            color: #e2e8f0;
+            max-width: 480px;
+            width: 100%;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            border: 1px solid #334155;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        h1 span {
+            background: #3b82f6;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: white;
+        }
+        .video-container {
+            background: #0f172a;
+            border-radius: 24px;
+            overflow: hidden;
+            margin: 16px 0;
+            aspect-ratio: 4/3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #334155;
+        }
+        video, .placeholder {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1e293b;
+            color: #64748b;
+            font-size: 1rem;
+        }
+        .stats-grid {
+            background: #0f172a;
+            border-radius: 20px;
+            padding: 16px;
+            margin: 16px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat-item {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 12px 10px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+        }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-top: 4px;
+            color: #facc15;
+        }
+        .settings {
+            background: #0f172a;
+            border-radius: 20px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .settings input, .settings select {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 40px;
+            color: white;
+            font-size: 0.9rem;
+            margin: 6px 0;
+            outline: none;
+        }
+        .settings input:focus {
+            border-color: #3b82f6;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 16px 0 8px;
+        }
+        .btn {
+            flex: 1 1 auto;
+            background: #2d3a4f;
+            border: none;
+            color: white;
+            padding: 14px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #4b5563;
+        }
+        .btn-primary {
+            background: #2563eb;
+            border-color: #3b82f6;
+        }
+        .btn-primary:hover {
+            background: #3b82f6;
+        }
+        .btn-success {
+            background: #16a34a;
+            border-color: #22c55e;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #4b5563;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .auto-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .auto-row input {
+            width: 80px;
+            text-align: center;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 40px;
+            padding: 10px;
+            color: white;
+        }
+        .status {
+            background: #0f172a;
+            border-radius: 40px;
+            padding: 12px 18px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            border-left: 4px solid #3b82f6;
+            word-break: break-word;
+            color: #cbd5e1;
+        }
+        .small-note {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>
+        📸 Telegram Cam <span>ADVANCED</span>
+    </h1>
+    <p style="color:#94a3b8; margin-top: -5px;">Battery + screen + auto‑send</p>
+
+    <!-- Camera preview -->
+    <div class="video-container">
+        <video id="video" autoplay playsinline style="display: none;"></video>
+        <div id="placeholder" class="placeholder">🎥 Camera starting…</div>
+    </div>
+
+    <!-- Real‑time stats -->
+    <div class="stats-grid">
+        <div class="stat-item">
+            <div class="stat-label">Battery</div>
+            <div class="stat-value" id="battery-level">--%</div>
+            <div style="font-size:0.7rem; color:#94a3b8;" id="battery-status"></div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-label">Screen</div>
+            <div class="stat-value" id="screen-res">--</div>
+            <div style="font-size:0.7rem; color:#94a3b8;" id="orientation"></div>
+        </div>
+    </div>
+
+    <!-- Telegram settings (editable) -->
+    <div class="settings">
+        <input type="text" id="botToken" placeholder="Bot Token (e.g. 12345:ABC...)" value="">
+        <input type="text" id="chatId" placeholder="Chat ID (numeric or @username)" value="">
+        <div style="display: flex; gap:6px; margin-top: 8px;">
+            <button class="btn btn-outline" id="saveSettingsBtn" style="flex:2;">💾 Save to localStorage</button>
+            <button class="btn btn-outline" id="testBotBtn" style="flex:1;">🧪 Test</button>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="button-group">
+        <button class="btn btn-primary" id="captureBtn">📸 Capture & send now</button>
+    </div>
+
+    <!-- Auto‑send controls -->
+    <div class="auto-row">
+        <button class="btn btn-outline" id="toggleAutoBtn" style="flex:2;">⏯ Start auto</button>
+        <input type="number" id="intervalSec" min="5" max="3600" value="30" step="1">
+        <span style="color:#94a3b8;">sec</span>
+    </div>
+
+    <!-- Last status -->
+    <div class="status" id="statusMsg">
+        ⏳ Ready. Enter bot credentials and capture.
+    </div>
+    <div class="small-note">
+        ⚡ Camera access required • Battery API may not work on all browsers
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- DOM elements -----
+        const video = document.getElementById('video');
+        const placeholder = document.getElementById('placeholder');
+        const batteryLevel = document.getElementById('battery-level');
+        const batteryStatus = document.getElementById('battery-status');
+        const screenRes = document.getElementById('screen-res');
+        const orientationEl = document.getElementById('orientation');
+        const botTokenInput = document.getElementById('botToken');
+        const chatIdInput = document.getElementById('chatId');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+        const testBotBtn = document.getElementById('testBotBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const toggleAutoBtn = document.getElementById('toggleAutoBtn');
+        const intervalSecInput = document.getElementById('intervalSec');
+        const statusMsg = document.getElementById('statusMsg');
+
+        // ----- State -----
+        let currentStream = null;
+        let autoInterval = null;
+        let autoActive = false;
+        let lastBattery = { level: 0, charging: false };
+        let screenWidth = window.screen.width;
+        let screenHeight = window.screen.height;
+
+        // ----- Load saved settings from localStorage -----
+        function loadSettings() {
+            const savedToken = localStorage.getItem('tg_bot_token');
+            const savedChat = localStorage.getItem('tg_chat_id');
+            if (savedToken) botTokenInput.value = savedToken;
+            if (savedChat) chatIdInput.value = savedChat;
+        }
+        loadSettings();
+
+        // ----- Save settings to localStorage -----
+        saveSettingsBtn.addEventListener('click', () => {
+            localStorage.setItem('tg_bot_token', botTokenInput.value.trim());
+            localStorage.setItem('tg_chat_id', chatIdInput.value.trim());
+            setStatus('✅ Settings saved to browser', 'green');
+        });
+
+        // ----- Update battery info (and fallback) -----
+        async function updateBatteryInfo() {
+            try {
+                if ('getBattery' in navigator) {
+                    const battery = await navigator.getBattery();
+                    lastBattery = {
+                        level: battery.level * 100,
+                        charging: battery.charging
+                    };
+                    batteryLevel.innerText = Math.round(battery.level * 100) + '%';
+                    batteryStatus.innerText = battery.charging ? '⚡ Charging' : '🔋 Discharging';
+                } else {
+                    // Fallback: approximate with time (no real API)
+                    batteryLevel.innerText = 'N/A';
+                    batteryStatus.innerText = 'API unsupported';
+                }
+            } catch (e) {
+                batteryLevel.innerText = 'ERR';
+                batteryStatus.innerText = 'Battery error';
+            }
+        }
+
+        // Update screen info
+        function updateScreenInfo() {
+            screenWidth = window.screen.width;
+            screenHeight = window.screen.height;
+            screenRes.innerText = screenWidth + 'x' + screenHeight;
+            if (window.screen.orientation && window.screen.orientation.type) {
+                orientationEl.innerText = window.screen.orientation.type.includes('portrait') ? '📱 Portrait' : '🖥️ Landscape';
+            } else {
+                orientationEl.innerText = (window.innerHeight > window.innerWidth) ? '📱 Portrait' : '🖥️ Landscape';
+            }
+        }
+
+        // Call once and then every 5 seconds (battery changes are rare)
+        updateBatteryInfo();
+        updateScreenInfo();
+        setInterval(updateBatteryInfo, 5000);
+        window.addEventListener('resize', updateScreenInfo);
+
+        // ----- Camera access -----
+        async function startCamera() {
+            try {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1280 } } 
+                });
+                currentStream = stream;
+                video.srcObject = stream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                setStatus('📹 Camera active', 'green');
+            } catch (err) {
+                console.error('Camera error:', err);
+                placeholder.innerText = '❌ Camera access denied or not available';
+                placeholder.style.display = 'flex';
+                video.style.display = 'none';
+                setStatus('Camera error: ' + err.message, 'red');
+            }
+        }
+        startCamera();
+
+        // ----- Capture image as blob -----
+        function captureImageBlob() {
+            return new Promise((resolve, reject) => {
+                if (!video.videoWidth) {
+                    reject(new Error('Camera not ready'));
+                    return;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(blob => {
+                    if (blob) resolve(blob);
+                    else reject(new Error('Canvas to blob failed'));
+                }, 'image/jpeg', 0.85);
+            });
+        }
+
+        // ----- Collect device data (battery + screen) -----
+        async function collectDeviceData() {
+            const battery = lastBattery;
+            const screen = `${screenWidth}x${screenHeight}`;
+            const orientation = (window.innerHeight > window.innerWidth) ? 'portrait' : 'landscape';
+            return {
+                battery: battery.level,
+                charging: battery.charging,
+                screen,
+                orientation
+            };
+        }
+
+        // ----- Send to Telegram (photo with caption) -----
+        async function sendToTelegram(imageBlob, caption) {
+            const token = botTokenInput.value.trim();
+            const chatId = chatIdInput.value.trim();
+            if (!token || !chatId) {
+                throw new Error('Bot token or Chat ID missing');
+            }
+
+            const formData = new FormData();
+            formData.append('chat_id', chatId);
+            formData.append('photo', imageBlob, 'capture.jpg');
+            formData.append('caption', caption);
+
+            const response = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (!result.ok) {
+                throw new Error(`Telegram error: ${result.description}`);
+            }
+            return result;
+        }
+
+        // ----- Test bot connection (send a simple message) -----
+        async function testBot() {
+            const token = botTokenInput.value.trim();
+            const chatId = chatIdInput.value.trim();
+            if (!token || !chatId) {
+                setStatus('❌ Enter bot token and chat ID first', 'red');
+                return false;
+            }
+            try {
+                setStatus('⏳ Testing...', 'yellow');
+                const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: '🤖 *Camera bot connected!*\nSettings are working.',
+                        parse_mode: 'Markdown'
+                    })
+                });
+                const result = await response.json();
+                if (result.ok) {
+                    setStatus('✅ Test message sent! Check Telegram.', 'green');
+                    return true;
+                } else {
+                    throw new Error(result.description);
+                }
+            } catch (err) {
+                setStatus('❌ Test failed: ' + err.message, 'red');
+                return false;
+            }
+        }
+        testBotBtn.addEventListener('click', testBot);
+
+        // ----- Capture & send full procedure -----
+        async function captureAndSend() {
+            try {
+                setStatus('📸 Capturing...', 'yellow');
+                const imageBlob = await captureImageBlob();
+                const data = await collectDeviceData();
+
+                const caption = `📱 *Device report*\n` +
+                    `🔋 Battery: ${Math.round(data.battery)}% ${data.charging ? '(charging)' : ''}\n` +
+                    `🖥️ Screen: ${data.screen} (${data.orientation})\n` +
+                    `⏱️ ${new Date().toLocaleString()}`;
+
+                setStatus('📤 Sending to Telegram...', 'yellow');
+                await sendToTelegram(imageBlob, caption);
+                setStatus('✅ Sent successfully!', 'green');
+            } catch (err) {
+                console.error(err);
+                setStatus('❌ ' + err.message, 'red');
+            }
+        }
+        captureBtn.addEventListener('click', captureAndSend);
+
+        // ----- Auto‑send toggle -----
+        function startAutoSend(seconds) {
+            if (autoInterval) clearInterval(autoInterval);
+            autoActive = true;
+            toggleAutoBtn.innerHTML = '⏸ Stop auto';
+            toggleAutoBtn.classList.add('btn-primary');
+            setStatus(`⏲️ Auto-send every ${seconds}s`, 'yellow');
+            autoInterval = setInterval(() => {
+                captureAndSend().catch(e => {
+                    setStatus('Auto-send error: ' + e.message, 'red');
+                });
+            }, seconds * 1000);
+        }
+
+        function stopAutoSend() {
+            if (autoInterval) {
+                clearInterval(autoInterval);
+                autoInterval = null;
+            }
+            autoActive = false;
+            toggleAutoBtn.innerHTML = '⏯ Start auto';
+            toggleAutoBtn.classList.remove('btn-primary');
+            setStatus('⏸ Auto stopped', 'green');
+        }
+
+        toggleAutoBtn.addEventListener('click', () => {
+            if (autoActive) {
+                stopAutoSend();
+            } else {
+                const secs = parseInt(intervalSecInput.value, 10);
+                if (isNaN(secs) || secs < 5) {
+                    setStatus('Interval must be at least 5 seconds', 'red');
+                    return;
+                }
+                startAutoSend(secs);
+            }
+        });
+
+        // ----- Helper to set status with color -----
+        function setStatus(text, color = 'blue') {
+            statusMsg.innerText = text;
+            const colors = {
+                red: '#ef4444',
+                green: '#22c55e',
+                yellow: '#eab308',
+                blue: '#3b82f6'
+            };
+            statusMsg.style.borderLeftColor = colors[color] || colors.blue;
+        }
+
+        // ----- Clean up on page unload -----
+        window.addEventListener('beforeunload', () => {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+            if (autoInterval) clearInterval(autoInterval);
+        });
+
+        // ----- Also stop camera when page becomes hidden (optional) -----
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && currentStream) {
+                // pause camera to save resources (optional)
+                currentStream.getTracks().forEach(track => track.enabled = false);
+            } else if (!document.hidden && currentStream) {
+                currentStream.getTracks().forEach(track => track.enabled = true);
+            }
+        });
+
+        // ----- Force update screen on orientation change -----
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateScreenInfo, 100);
+        });
+    })();
+</script>
+</body>
+</html>
